@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using Object = System.Object;
 
 namespace Grid
 {
@@ -20,6 +21,11 @@ namespace Grid
 
         public T Get(int x, int y)
         {
+            if (x < 0 || x >= Width || y < 0 || y >= Height)
+            {
+                return default;
+            }
+
             return Items[x, y];
         }
 
