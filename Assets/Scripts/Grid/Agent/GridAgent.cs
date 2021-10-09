@@ -18,6 +18,9 @@ namespace Grid.Agent
         private float stepTimer = 0;
         private IEnumerator<Vector2Int> _path;
 
+        public bool showPath = true;
+        public Color pathColor = Color.cyan;
+
         private AgentState _state = AgentState.Uninitialised;
         public AgentState State
         {
@@ -62,8 +65,27 @@ namespace Grid.Agent
         {
             Debug.Log($"Following path {path.ToString()}");
             State = AgentState.Moving;
-            _path = path.GetEnumerator();
+
+            if (showPath)
+            {
+                if (_path != null)
+                {
+                    // Clear tint on existing path nodes.
+                    while (_path.MoveNext())
+                    {
+                        _grid.Get(_path.Current)?.ClearTint();
+                    }
+                }
+
+                // Tint new path
+                foreach (var point in path)
+                {
+                    _grid.Get(point)?.SetTint(pathColor);
+                }
+            }
             stepTimer = 0;
+            _path = path.GetEnumerator();
+
             MoveNext();
         }
 
@@ -73,6 +95,10 @@ namespace Grid.Agent
             {
                 Debug.Log($"Moving to next path node at {_path.Current}");
                 MoveTo(_path.Current);
+                if (showPath)
+                {
+                    _grid.Get(position)?.ClearTint();
+                }
             }
             else
             {

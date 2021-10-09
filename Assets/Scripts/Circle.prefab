@@ -123,3 +123,5 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ff1f3f16120b4b96837c605ecf2ae38f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  agent: {fileID: 0}
+  sprite: {fileID: 7252482303876614519}
