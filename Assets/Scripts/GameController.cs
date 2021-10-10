@@ -29,7 +29,6 @@ public class GameController : MonoBehaviour
 
     private void HandleGridClick(Vector2Int gridPoint, Vector2 worldPoint)
     {
-        Debug.Log($"HandleGridClick {gridPoint} {worldPoint}");
         var (cost, path) = grid.Path(character.position, gridPoint);
         character.FollowPath(path);
     }

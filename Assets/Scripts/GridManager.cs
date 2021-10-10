@@ -47,7 +47,6 @@ namespace Grid {
 
         private void HandleGridClick(Vector2Int point)
         {
-            Debug.Log($"Point clicked {point}");
             OnGridClick(point, GridToWorld(point));
         }
 

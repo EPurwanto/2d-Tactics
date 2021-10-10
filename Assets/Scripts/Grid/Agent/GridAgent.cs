@@ -63,7 +63,6 @@ namespace Grid.Agent
 
         public void FollowPath(IEnumerable<Vector2Int> path)
         {
-            Debug.Log($"Following path {path.ToString()}");
             State = AgentState.Moving;
 
             if (showPath)
@@ -93,7 +92,6 @@ namespace Grid.Agent
         {
             if (_path?.MoveNext() ?? false)
             {
-                Debug.Log($"Moving to next path node at {_path.Current}");
                 MoveTo(_path.Current);
                 if (showPath)
                 {
@@ -102,7 +100,6 @@ namespace Grid.Agent
             }
             else
             {
-                Debug.Log("No path or path had ended");
                 State = AgentState.Ready;
                 _path = null;
             }
@@ -110,7 +107,6 @@ namespace Grid.Agent
 
         public void MoveTo(Vector2Int point)
         {
-            Debug.Log($"Moving to {point}");
             transform.position = _grid.GridToWorld(point);
             _grid.Get(position).agent = null;
             _grid.Get(point).agent = this;
