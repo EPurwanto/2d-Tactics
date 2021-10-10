@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using UnityEditor.PackageManager;
 using UnityEngine;
 
 namespace Grid.Agent
@@ -8,6 +9,7 @@ namespace Grid.Agent
     {
         Uninitialised,
         Ready,
+        Selected,
         Moving,
     }
 
@@ -59,12 +61,37 @@ namespace Grid.Agent
             State = AgentState.Ready;
             _grid = grid;
             transform.position = grid.GridToWorld(position);
+            var gridPoint = grid.Get(position);
+            if (gridPoint)
+            {
+                gridPoint.agent = this;
+            }
+        }
+
+        public void Select(bool selected)
+        {
+            if (selected)
+            {
+                State = AgentState.Selected;
+            }
+            else
+            {
+                State = AgentState.Ready;
+            }
         }
 
         public void FollowPath(IEnumerable<Vector2Int> path)
         {
             State = AgentState.Moving;
 
+            SetPath(path);
+            stepTimer = 0;
+
+            MoveNext();
+        }
+
+        public void SetPath(IEnumerable<Vector2Int> path)
+        {
             if (showPath)
             {
                 if (_path != null)
@@ -82,35 +109,52 @@ namespace Grid.Agent
                     _grid.Get(point)?.SetTint(pathColor);
                 }
             }
-            stepTimer = 0;
             _path = path.GetEnumerator();
-
-            MoveNext();
         }
 
-        public void MoveNext()
+        public bool MoveNext()
         {
             if (_path?.MoveNext() ?? false)
             {
-                MoveTo(_path.Current);
-                if (showPath)
+                if (MoveTo(_path.Current))
                 {
-                    _grid.Get(position)?.ClearTint();
+                    if (showPath)
+                    {
+                        _grid.Get(position)?.ClearTint();
+                    }
+                    return true;
+                }
+                else
+                {
+                    State = AgentState.Ready;
+                    SetPath(null);
+
+                    return false;
                 }
             }
             else
             {
                 State = AgentState.Ready;
-                _path = null;
+                SetPath(null);
+
+                return false;
             }
         }
 
-        public void MoveTo(Vector2Int point)
+        public bool MoveTo(Vector2Int point)
         {
-            transform.position = _grid.GridToWorld(point);
+            var destination = _grid.Get(point);
+            if (!destination || (destination.agent && destination.agent != this))
+            {
+                Debug.LogError($"Move Aborted {point}, {destination.agent}");
+                return false;
+            }
             _grid.Get(position).agent = null;
-            _grid.Get(point).agent = this;
+            destination.agent = this;
             position = point;
+            transform.position = _grid.GridToWorld(point);
+
+            return true;
         }
     }
 }

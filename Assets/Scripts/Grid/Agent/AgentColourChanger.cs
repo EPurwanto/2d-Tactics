@@ -8,7 +8,8 @@ namespace Grid.Agent
         public GridAgent agent;
         public SpriteRenderer sprite;
         public Color uninitialisedColor = Color.red;
-        public Color readyColor = Color.green;
+        public Color readyColor = Color.black;
+        public Color selectedColor = Color.green;
         public Color movingColor = Color.blue;
 
         private void Start()
@@ -26,6 +27,9 @@ namespace Grid.Agent
                     break;
                 case AgentState.Ready:
                     sprite.color = readyColor;
+                    break;
+                case AgentState.Selected:
+                    sprite.color = selectedColor;
                     break;
                 case AgentState.Moving:
                     sprite.color = movingColor;

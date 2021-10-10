@@ -11,7 +11,8 @@ public class GameController : MonoBehaviour
 {
     public GridManager grid;
 
-    public GridAgent character;
+    public GridAgent[] characters;
+    private GridAgent selectedCharacter;
 
     // Start is called before the first frame update
     void Start()
@@ -21,16 +22,34 @@ public class GameController : MonoBehaviour
             grid.OnGridClick += HandleGridClick;
         }
 
-        if (character)
+        foreach (var agent in characters)
         {
-            character.Init(grid);
+            agent.Init(grid);
         }
     }
 
     private void HandleGridClick(Vector2Int gridPoint, Vector2 worldPoint)
     {
-        var (cost, path) = grid.Path(character.position, gridPoint);
-        character.FollowPath(path);
+        var agent = grid.Get(gridPoint)?.agent;
+        if (agent)
+        {
+            if (selectedCharacter == agent)
+            {
+                selectedCharacter.Select(false);
+                selectedCharacter = null;
+            }
+            else
+            {
+                selectedCharacter?.Select(false);
+                selectedCharacter = agent;
+                selectedCharacter.Select(true);
+            }
+        }
+        else if (selectedCharacter)
+        {
+            var (cost, path) = grid.Path(selectedCharacter.position, gridPoint);
+            selectedCharacter.FollowPath(path);
+        }
     }
 
     // Update is called once per frame

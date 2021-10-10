@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using Priority_Queue;
 
@@ -15,26 +17,15 @@ namespace Grid.Pathing
             public PathNode Prev;
         }
 
-        private IGenericGrid<TGridNode> grid;
+        private Func<Vector2Int, Vector2Int, float> _costFunc;
+        private Func<Vector2Int, Vector2Int, float> _hCostFunc;
+        private Func<Vector2Int, IEnumerable<Vector2Int>> _neighboursFunc;
 
-        public AStarPathFinder(IGenericGrid<TGridNode> grid)
+        public AStarPathFinder(Func<Vector2Int, Vector2Int, float> cost, Func<Vector2Int, Vector2Int, float> hCost, Func<Vector2Int, IEnumerable<Vector2Int>> neighbours)
         {
-            this.grid = grid;
-        }
-
-        public float Cost(Vector2Int origin, Vector2Int destination)
-        {
-            if ((destination - origin).magnitude <= 1)
-            {
-                return 1;
-            }
-
-            return Constants.CostInfinite;
-        }
-
-        public float HeuristicCost(Vector2Int origin, Vector2Int destination)
-        {
-            return (destination - origin).magnitude;
+            _costFunc = cost;
+            _hCostFunc = hCost;
+            _neighboursFunc = neighbours;
         }
 
         public Tuple<float, IEnumerable<Vector2Int>> Path(Vector2Int origin, Vector2Int destination)
@@ -85,35 +76,15 @@ namespace Grid.Pathing
             return path;
         }
 
-        private Vector2Int[] _neighbourDirections = new[]
+        private IEnumerable<PathNode> ExpandNode(PathNode node, Vector2Int destination)
         {
-            Vector2Int.up,
-            Vector2Int.right,
-            Vector2Int.down,
-            Vector2Int.left,
-        };
-        private List<PathNode> ExpandNode(PathNode node, Vector2Int destination)
-        {
-            var neighbours = new List<PathNode>();
-
-            foreach (var dir in _neighbourDirections)
+            return _neighboursFunc(node.Point).Select(neighbour => new PathNode()
             {
-                var nextPoint = node.Point + dir;
-                var pointExists = grid.Get(nextPoint) != null;
-
-                if (pointExists)
-                {
-                    neighbours.Add(new PathNode()
-                    {
-                        Point = nextPoint,
-                        Prev = node,
-                        GCost = node.GCost + Cost(node.Point, nextPoint),
-                        HCost = HeuristicCost(nextPoint, destination)
-                    });
-                }
-            }
-
-            return neighbours;
+                Point = neighbour,
+                Prev = node,
+                GCost = node.GCost + _costFunc(node.Point, neighbour),
+                HCost = _hCostFunc(neighbour, destination)
+            });
         }
     }
 }
