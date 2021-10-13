@@ -23,6 +23,7 @@ namespace Grid.Agent
         public bool showPath = true;
         public Color pathColor = Color.cyan;
 
+        private bool _selected;
         private AgentState _state = AgentState.Uninitialised;
         public AgentState State
         {
@@ -31,6 +32,7 @@ namespace Grid.Agent
             {
                 var was = _state;
                 _state = value;
+                Debug.Log($"{gameObject.name} OnStateChange {was}-{value}");
                 OnStateChange?.Invoke(was, value);
             }
         }
@@ -56,9 +58,29 @@ namespace Grid.Agent
             }
         }
 
+        private void UpdateState()
+        {
+            if (!_grid)
+            {
+                State = AgentState.Uninitialised;
+            }
+            else if (_path != null)
+            {
+                State =  AgentState.Moving;
+            }
+            else if (_selected)
+            {
+                State =  AgentState.Selected;
+            }
+            else
+            {
+                State =  AgentState.Ready;
+            }
+
+        }
+
         public void Init(GridManager grid)
         {
-            State = AgentState.Ready;
             _grid = grid;
             transform.position = grid.GridToWorld(position);
             var gridPoint = grid.Get(position);
@@ -66,24 +88,17 @@ namespace Grid.Agent
             {
                 gridPoint.agent = this;
             }
+            UpdateState();
         }
 
         public void Select(bool selected)
         {
-            if (selected)
-            {
-                State = AgentState.Selected;
-            }
-            else
-            {
-                State = AgentState.Ready;
-            }
+            _selected = selected;
+            UpdateState();
         }
 
         public void FollowPath(IEnumerable<Vector2Int> path)
         {
-            State = AgentState.Moving;
-
             SetPath(path);
             stepTimer = 0;
 
@@ -103,13 +118,18 @@ namespace Grid.Agent
                     }
                 }
 
-                // Tint new path
-                foreach (var point in path)
+                if (path != null)
                 {
-                    _grid.Get(point)?.SetTint(pathColor);
+                    // Tint new path
+                    foreach (var point in path)
+                    {
+                        _grid.Get(point)?.SetTint(pathColor);
+                    }
                 }
             }
-            _path = path.GetEnumerator();
+
+            _path = path?.GetEnumerator();
+            UpdateState();
         }
 
         public bool MoveNext()
@@ -124,21 +144,9 @@ namespace Grid.Agent
                     }
                     return true;
                 }
-                else
-                {
-                    State = AgentState.Ready;
-                    SetPath(null);
-
-                    return false;
-                }
             }
-            else
-            {
-                State = AgentState.Ready;
-                SetPath(null);
-
-                return false;
-            }
+            SetPath(null);
+            return false;
         }
 
         public bool MoveTo(Vector2Int point)
