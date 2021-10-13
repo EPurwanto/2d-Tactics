@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using Game;
 using Grid;
 using Grid.Agent;
 using Grid.Pathing;
@@ -10,46 +11,28 @@ using UnityEngine;
 public class GameController : MonoBehaviour
 {
     public GridManager grid;
-
-    public GridAgent[] characters;
-    private GridAgent selectedCharacter;
+    public Player[] players;
+    private int activePlayer = 0;
 
     // Start is called before the first frame update
     void Start()
     {
-        if (grid)
-        {
-            grid.OnGridClick += HandleGridClick;
-        }
 
-        foreach (var agent in characters)
+        foreach (var player in players)
         {
-            agent.Init(grid);
+            player.Init(grid);
         }
+        players[activePlayer].SetActive(true);
     }
 
-    private void HandleGridClick(Vector2Int gridPoint, Vector2 worldPoint)
+    public void NextPlayer()
     {
-        var agent = grid.Get(gridPoint)?.agent;
-        if (agent)
-        {
-            if (selectedCharacter == agent)
-            {
-                selectedCharacter.Select(false);
-                selectedCharacter = null;
-            }
-            else
-            {
-                selectedCharacter?.Select(false);
-                selectedCharacter = agent;
-                selectedCharacter.Select(true);
-            }
-        }
-        else if (selectedCharacter)
-        {
-            var (cost, path) = grid.Path(selectedCharacter.position, gridPoint);
-            selectedCharacter.FollowPath(path);
-        }
+        players[activePlayer].SetActive(false);
+        activePlayer++;
+        activePlayer = activePlayer % players.Length;
+        players[activePlayer].SetActive(true);
+
+        Debug.Log($"Active Player: {players[activePlayer].gameObject.name}");
     }
 
     // Update is called once per frame
