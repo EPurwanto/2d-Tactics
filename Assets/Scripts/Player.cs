@@ -19,14 +19,14 @@ namespace Game
             {
                 if (_selectedCharacter == value)
                 {
-                    _selectedCharacter.Select(false);
+                    _selectedCharacter?.Select(false);
                     _selectedCharacter = null;
                 }
                 else
                 {
                     _selectedCharacter?.Select(false);
                     _selectedCharacter = value;
-                    _selectedCharacter.Select(true);
+                    _selectedCharacter?.Select(true);
                 }
             }
         }
@@ -40,6 +40,25 @@ namespace Game
             foreach (var agent in characters)
             {
                 agent.Init(grid);
+            }
+        }
+
+        public void OnTurnStart()
+        {
+            _active = true;
+            foreach (var agent in characters)
+            {
+                agent.OnTurnStart();
+            }
+        }
+
+        public void OnTurnEnd()
+        {
+            _active = false;
+            SelectedCharacter = null;
+            foreach (var agent in characters)
+            {
+                agent.OnTurnEnd();
             }
         }
 
@@ -58,14 +77,9 @@ namespace Game
                 else if (SelectedCharacter)
                 {
                     var (cost, path) = _grid.Path(SelectedCharacter.position, gridPoint);
-                    SelectedCharacter.FollowPath(path);
+                    SelectedCharacter.SetPath(path);
                 }
             }
-        }
-
-        public void SetActive(bool active)
-        {
-            _active = active;
         }
     }
 

@@ -28,7 +28,7 @@ namespace Grid.Pathing
             _neighboursFunc = neighbours;
         }
 
-        public Tuple<float, IEnumerable<Vector2Int>> Path(Vector2Int origin, Vector2Int destination)
+        public Tuple<float, List<Vector2Int>> Path(Vector2Int origin, Vector2Int destination)
         {
             Debug.Log("Pathfinding Start");
             var counter = 0;
@@ -41,15 +41,15 @@ namespace Grid.Pathing
 
             while (openSet.Count > 0 && counter < 200)
             {
-                var next = openSet.Dequeue();
-                if (next.Point == destination)
+                var node = openSet.Dequeue();
+                if (node.Point == destination)
                 {
                     Debug.Log("Pathfinding Success");
-                    var path = ExtractPath(next);
-                    return new Tuple<float, IEnumerable<Vector2Int>>(next.GCost, path);
+                    var path = ExtractPath(node);
+                    return new Tuple<float, List<Vector2Int>>(node.GCost, path.GetRange(1, path.Count - 1));
                 }
 
-                foreach (var neighbour in ExpandNode(next, destination))
+                foreach (var neighbour in ExpandNode(node, destination))
                 {
                     openSet.Enqueue(neighbour, neighbour.GCost + neighbour.HCost);
                 }
@@ -61,7 +61,7 @@ namespace Grid.Pathing
             }
 
             Debug.Log("Pathfinding Failure");
-            return new Tuple<float, IEnumerable<Vector2Int>>(Constants.CostInfinite, new Vector2Int[0]);
+            return new Tuple<float, List<Vector2Int>>(Constants.CostInfinite, new List<Vector2Int>(0));
         }
 
         private List<Vector2Int> ExtractPath(PathNode node)

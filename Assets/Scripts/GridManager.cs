@@ -6,13 +6,14 @@ using UnityEngine;
 
 namespace Grid {
 
-    public class GridManager : MonoBehaviour, IPathFinder
+    public class GridManager : MonoBehaviour, IPathFinder, IAreaFinder
     {
         public Vector2Int size = new Vector2Int(3, 3);
         public Vector2 spacing = new Vector2(1, 1);
 
         private GenericSquareGrid<GridPoint> _grid;
         private IPathFinder _pathFinder;
+        private IAreaFinder _areaFinder;
 
         public GridPoint prefab;
 
@@ -23,10 +24,11 @@ namespace Grid {
         public event Action<Vector2Int, Vector2> OnGridClick;
 
         // Start is called before the first frame update
-        private void Start()
+        private void Awake()
         {
             _grid = new GenericSquareGrid<GridPoint>(size.x, size.y);
             _pathFinder = new AStarPathFinder<GridPoint>(Cost, HeuristicCost, Neighbours);
+            _areaFinder = new SimpleAreaFinder(Cost, Neighbours);
             for (var x = 0; x < size.x; x++)
             {
                 for (var y = 0; y < size.y; y++)
@@ -50,6 +52,8 @@ namespace Grid {
             OnGridClick?.Invoke(point, GridToWorld(point));
         }
 
+        #region Grid Functions
+
         public Vector2 GridToWorld(Vector2Int position)
         {
             return transform.TransformPoint(spacing * position);
@@ -60,14 +64,37 @@ namespace Grid {
             return _grid.Get(point);
         }
 
-        public Tuple<float, IEnumerable<Vector2Int>> Path(Vector2Int origin, Vector2Int destination)
+        #endregion
+
+        #region IPathFinder
+
+        public Tuple<float, List<Vector2Int>> Path(Vector2Int origin, Vector2Int destination)
         {
             return _pathFinder.Path(origin, destination);
         }
 
+        #endregion
+
+        #region IAreaFinder
+
+        public IList<Vector2Int> Circle(Vector2Int center, float radius)
+        {
+            return _areaFinder.Circle(center, radius);
+        }
+
+        #endregion
+
+        #region Pathfinding Functions
+
+
         public float Cost(Vector2Int origin, Vector2Int destination)
         {
-            if ((destination - origin).magnitude <= 1.1f)
+            if (destination == origin)
+            {
+                return 0;
+            }
+            var diff = destination - origin;
+            if (Math.Abs(diff.x) + Math.Abs(diff.y) == 1)
             {
                 var point = Get(destination);
                 // Infinite cost for moving into occupied space or off edge of map
@@ -114,5 +141,7 @@ namespace Grid {
 
             return neighbours;
         }
+
+        #endregion
     }
 }

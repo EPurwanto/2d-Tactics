@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEditor.PackageManager;
 using UnityEngine;
@@ -17,11 +18,16 @@ namespace Grid.Agent
     {
         public Vector2Int position;
         public float stepTimeS = 0.5f;
-        private float stepTimer = 0;
-        private IEnumerator<Vector2Int> _path;
+        private float _stepTimer = 0;
+        public int maxMovement = 4;
+        private int remainingMovement = 0;
+        private IList<Vector2Int> _path;
+        private IList<Vector2Int> _reachableArea;
+
 
         public bool showPath = true;
         public Color pathColor = Color.cyan;
+        public Color rangeColour = Color.green;
 
         private bool _selected;
         private AgentState _state = AgentState.Uninitialised;
@@ -31,9 +37,12 @@ namespace Grid.Agent
             private set
             {
                 var was = _state;
-                _state = value;
-                Debug.Log($"{gameObject.name} OnStateChange {was}-{value}");
-                OnStateChange?.Invoke(was, value);
+                if (value != was)
+                {
+                    _state = value;
+                    Debug.Log($"{gameObject.name} OnStateChange {was}-{value}");
+                    OnStateChange?.Invoke(was, value);
+                }
             }
         }
 
@@ -47,13 +56,13 @@ namespace Grid.Agent
 
         private void Update()
         {
-            if (_path != null)
+            if (_path != null && remainingMovement > 0)
             {
-                stepTimer += Time.deltaTime;
-                if (stepTimer >= stepTimeS)
+                _stepTimer += Time.deltaTime;
+                if (_stepTimer >= stepTimeS)
                 {
                     MoveNext();
-                    stepTimer -= stepTimeS;
+                    _stepTimer -= stepTimeS;
                 }
             }
         }
@@ -76,7 +85,6 @@ namespace Grid.Agent
             {
                 State =  AgentState.Ready;
             }
-
         }
 
         public void Init(GridManager grid)
@@ -94,58 +102,64 @@ namespace Grid.Agent
         public void Select(bool selected)
         {
             _selected = selected;
+            var previousReachableArea = _reachableArea;
+            _reachableArea = selected ? _grid.Circle(position, remainingMovement) : null;
+            if (showPath)
+            {
+                UpdateHighlights(null, previousReachableArea);
+            }
             UpdateState();
         }
 
-        public void FollowPath(IEnumerable<Vector2Int> path)
+        public void OnTurnStart()
         {
-            SetPath(path);
-            stepTimer = 0;
-
-            MoveNext();
+            remainingMovement = maxMovement;
         }
 
-        public void SetPath(IEnumerable<Vector2Int> path)
+        public void OnTurnEnd()
+        {
+            _selected = false;
+            UpdateState();
+        }
+
+        public void SetPath(IList<Vector2Int> path)
         {
             if (showPath)
             {
-                if (_path != null)
-                {
-                    // Clear tint on existing path nodes.
-                    while (_path.MoveNext())
-                    {
-                        _grid.Get(_path.Current)?.ClearTint();
-                    }
-                }
-
-                if (path != null)
-                {
-                    // Tint new path
-                    foreach (var point in path)
-                    {
-                        _grid.Get(point)?.SetTint(pathColor);
-                    }
-                }
+                UpdateHighlights(_path, null);
             }
 
-            _path = path?.GetEnumerator();
+            _path = path;
+            _stepTimer = 0;
             UpdateState();
         }
 
         public bool MoveNext()
         {
-            if (_path?.MoveNext() ?? false)
+            if (remainingMovement > 0 && _path != null)
             {
-                if (MoveTo(_path.Current))
+                var destination = _path[0];
+                _path.RemoveAt(0);
+                MoveTo(destination);
+
+                var prevReachableArea = _reachableArea;
+                _reachableArea = _grid.Circle(position, remainingMovement);
+
+                if (showPath)
                 {
-                    if (showPath)
-                    {
-                        _grid.Get(position)?.ClearTint();
-                    }
-                    return true;
+                    var prevPath = new List<Vector2Int>();
+                    prevPath.Add(destination);
+                    UpdateHighlights(prevPath, prevReachableArea);
                 }
+
+                if (_path.Count == 0)
+                {
+                    SetPath(null);
+                }
+
+                return true;
             }
-            SetPath(null);
+
             return false;
         }
 
@@ -161,8 +175,49 @@ namespace Grid.Agent
             destination.agent = this;
             position = point;
             transform.position = _grid.GridToWorld(point);
+            remainingMovement -= 1;
+            Debug.Log($"Remaining Movement {remainingMovement} {point}");
 
             return true;
+        }
+
+        private void UpdateHighlights(IList<Vector2Int> previousPath, IList<Vector2Int> previousReachableArea)
+        {
+            if (previousPath != null)
+            {
+                // Clear tint on existing path nodes.
+                foreach (var point in previousPath)
+                {
+                    _grid.Get(point).ClearTint();
+                }
+            }
+
+            if (previousReachableArea != null)
+            {
+                // Clear tint on existing range
+                foreach (var point in previousReachableArea)
+                {
+                    _grid.Get(point).ClearTint();
+                }
+            }
+
+            if (_reachableArea != null)
+            {
+                // Tint range first so path overrides it
+                foreach (var point in _reachableArea)
+                {
+                    _grid.Get(point).SetTint(rangeColour);
+                }
+            }
+
+            if (_path != null)
+            {
+                // Tint path
+                foreach (var point in _path)
+                {
+                    _grid.Get(point).SetTint(pathColor);
+                }
+            }
         }
     }
 }
