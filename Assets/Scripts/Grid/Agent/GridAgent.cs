@@ -21,7 +21,7 @@ namespace Grid.Agent
         public float stepTimeS = 0.5f;
         private float _stepTimer = 0;
         public int maxMovement = 4;
-        private int remainingMovement = 0;
+        public int remainingMovement = 0;
         private IList<Vector2Int> _path;
         private IList<Vector2Int> _reachableArea;
 

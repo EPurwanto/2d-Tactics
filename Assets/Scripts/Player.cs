@@ -94,7 +94,10 @@ namespace Game
                 else if (SelectedCharacter)
                 {
                     var (cost, path) = _grid.Path(SelectedCharacter.position, gridPoint);
-                    SelectedCharacter.SetPath(path);
+                    if (cost <= SelectedCharacter.remainingMovement)
+                    {
+                        SelectedCharacter.SetPath(path);
+                    }
                 }
             }
         }
