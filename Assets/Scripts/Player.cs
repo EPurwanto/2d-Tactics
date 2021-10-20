@@ -43,6 +43,7 @@ namespace Game
             OnTurnStart += HandleTurnStart;
             OnTurnEnd += HandleTurnEnd;
 
+            characters = GetComponentsInChildren<GridAgent>();
             foreach (var agent in characters)
             {
                 agent.Init(grid);
@@ -81,7 +82,7 @@ namespace Game
 
         public void HandleGridClick(Vector2Int gridPoint, Vector2 worldPoint)
         {
-            if (_active)
+            if (_active && (!SelectedCharacter || SelectedCharacter.State == AgentState.Selected))
             {
                 var agent = _grid.Get(gridPoint)?.agent;
                 if (agent)

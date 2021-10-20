@@ -23,8 +23,7 @@ namespace Grid {
          */
         public event Action<Vector2Int, Vector2> OnGridClick;
 
-        // Start is called before the first frame update
-        private void Awake()
+        public void Init()
         {
             _grid = new GenericSquareGrid<GridPoint>(size.x, size.y);
             _pathFinder = new AStarPathFinder<GridPoint>(Cost, HeuristicCost, Neighbours);
@@ -39,12 +38,6 @@ namespace Grid {
                     item.OnClick += () => HandleGridClick(point);
                 }
             }
-        }
-
-        // Update is called once per frame
-        void Update()
-        {
-
         }
 
         private void HandleGridClick(Vector2Int point)

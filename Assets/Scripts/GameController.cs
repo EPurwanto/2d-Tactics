@@ -29,6 +29,7 @@ public class GameController : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
+        grid.Init();
         foreach (var player in players)
         {
             player.Init(grid);
