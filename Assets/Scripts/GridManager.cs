@@ -54,7 +54,7 @@ namespace Grid {
 
         #region Grid Functions
 
-        public Vector2 GridToWorld(Vector2Int position)
+        public Vector3 GridToWorld(Vector2Int position)
         {
             return transform.TransformPoint(spacing * position);
         }

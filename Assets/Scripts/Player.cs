@@ -11,6 +11,10 @@ namespace Game
         public GridAgent[] characters;
         private GridManager _grid;
 
+        private event Action<GridAgent> OnSelectedCharacterChange;
+        private event Action OnTurnStart;
+        private event Action OnTurnEnd;
+
         private GridAgent _selectedCharacter;
         public GridAgent SelectedCharacter
         {
@@ -19,15 +23,13 @@ namespace Game
             {
                 if (_selectedCharacter == value)
                 {
-                    _selectedCharacter?.Select(false);
                     _selectedCharacter = null;
                 }
                 else
                 {
-                    _selectedCharacter?.Select(false);
                     _selectedCharacter = value;
-                    _selectedCharacter?.Select(true);
                 }
+                OnSelectedCharacterChange(_selectedCharacter);
             }
         }
 
@@ -37,32 +39,47 @@ namespace Game
         {
             _grid = grid;
             _grid.OnGridClick += HandleGridClick;
+
+            OnTurnStart += HandleTurnStart;
+            OnTurnEnd += HandleTurnEnd;
+
             foreach (var agent in characters)
             {
                 agent.Init(grid);
+                OnTurnStart += agent.HandleTurnStart;
+                OnTurnEnd += agent.HandleTurnEnd;
+                OnSelectedCharacterChange += agent.HandlePlayerSelectionChange;
             }
         }
 
-        public void OnTurnStart()
+
+        #region Event Handlers
+
+        public void HandleTurnStart()
         {
-            _active = true;
-            foreach (var agent in characters)
-            {
-                agent.OnTurnStart();
-            }
+
         }
 
-        public void OnTurnEnd()
+        public void HandleTurnEnd()
         {
-            _active = false;
             SelectedCharacter = null;
-            foreach (var agent in characters)
+        }
+
+        public void HandleActivePlayerChange(Player player)
+        {
+            if (player == this)
             {
-                agent.OnTurnEnd();
+                _active = true;
+                OnTurnStart();
+            }
+            else if (_active)
+            {
+                _active = false;
+                OnTurnEnd();
             }
         }
 
-        private void HandleGridClick(Vector2Int gridPoint, Vector2 worldPoint)
+        public void HandleGridClick(Vector2Int gridPoint, Vector2 worldPoint)
         {
             if (_active)
             {
@@ -81,6 +98,8 @@ namespace Game
                 }
             }
         }
+
+        #endregion
     }
 
 }

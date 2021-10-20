@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEditor.PackageManager;
 using UnityEngine;
 
@@ -24,13 +25,27 @@ namespace Grid.Agent
         private IList<Vector2Int> _path;
         private IList<Vector2Int> _reachableArea;
 
-
-        public bool showPath = true;
-        public Color pathColor = Color.cyan;
+        public LineRenderer lineRenderer;
         public Color rangeColour = Color.green;
 
         private bool _selected;
         private AgentState _state = AgentState.Uninitialised;
+
+        #region PropertyAccessors
+
+        public bool Selected
+        {
+            get => _selected;
+            set
+            {
+                _selected = value;
+                var previousReachableArea = _reachableArea;
+                _reachableArea = value ? _grid.Circle(position, remainingMovement) : null;
+                UpdateHighlights(previousReachableArea);
+                UpdateState();
+            }
+        }
+
         public AgentState State
         {
             get => _state;
@@ -45,6 +60,8 @@ namespace Grid.Agent
                 }
             }
         }
+
+        #endregion
 
         /**
          * <param name="first">Previous Value</param>
@@ -77,7 +94,7 @@ namespace Grid.Agent
             {
                 State =  AgentState.Moving;
             }
-            else if (_selected)
+            else if (Selected)
             {
                 State =  AgentState.Selected;
             }
@@ -99,38 +116,11 @@ namespace Grid.Agent
             UpdateState();
         }
 
-        public void Select(bool selected)
-        {
-            _selected = selected;
-            var previousReachableArea = _reachableArea;
-            _reachableArea = selected ? _grid.Circle(position, remainingMovement) : null;
-            if (showPath)
-            {
-                UpdateHighlights(null, previousReachableArea);
-            }
-            UpdateState();
-        }
-
-        public void OnTurnStart()
-        {
-            remainingMovement = maxMovement;
-        }
-
-        public void OnTurnEnd()
-        {
-            _selected = false;
-            UpdateState();
-        }
-
         public void SetPath(IList<Vector2Int> path)
         {
-            if (showPath)
-            {
-                UpdateHighlights(_path, null);
-            }
-
             _path = path;
             _stepTimer = 0;
+            UpdateHighlights(null);
             UpdateState();
         }
 
@@ -145,17 +135,14 @@ namespace Grid.Agent
                 var prevReachableArea = _reachableArea;
                 _reachableArea = _grid.Circle(position, remainingMovement);
 
-                if (showPath)
-                {
-                    var prevPath = new List<Vector2Int>();
-                    prevPath.Add(destination);
-                    UpdateHighlights(prevPath, prevReachableArea);
-                }
+                var prevPath = new List<Vector2Int>();
+                prevPath.Add(destination);
 
                 if (_path.Count == 0)
                 {
                     SetPath(null);
                 }
+                UpdateHighlights(prevReachableArea);
 
                 return true;
             }
@@ -181,17 +168,8 @@ namespace Grid.Agent
             return true;
         }
 
-        private void UpdateHighlights(IList<Vector2Int> previousPath, IList<Vector2Int> previousReachableArea)
+        private void UpdateHighlights(IList<Vector2Int> previousReachableArea)
         {
-            if (previousPath != null)
-            {
-                // Clear tint on existing path nodes.
-                foreach (var point in previousPath)
-                {
-                    _grid.Get(point).ClearTint();
-                }
-            }
-
             if (previousReachableArea != null)
             {
                 // Clear tint on existing range
@@ -212,12 +190,44 @@ namespace Grid.Agent
 
             if (_path != null)
             {
-                // Tint path
-                foreach (var point in _path)
-                {
-                    _grid.Get(point).SetTint(pathColor);
-                }
+                // Update lineRenderer
+                lineRenderer.positionCount = _path.Count + 1;
+                var pathPositions = _path.Select(_grid.GridToWorld).ToList();
+                pathPositions.Insert(0, transform.position);
+                lineRenderer.SetPositions(pathPositions.ToArray());
+            }
+            else
+            {
+                lineRenderer.positionCount = 0;
+                lineRenderer.SetPositions(new Vector3[0]);
             }
         }
+
+        #region Event Handlers
+
+        public void HandleTurnStart()
+        {
+            remainingMovement = maxMovement;
+        }
+
+        public void HandleTurnEnd()
+        {
+            Selected = false;
+            UpdateState();
+        }
+
+        public void HandlePlayerSelectionChange(GridAgent agent)
+        {
+            if (agent == this)
+            {
+                Selected = true;
+            }
+            else if (Selected)
+            {
+                Selected = false;
+            }
+        }
+
+        #endregion
     }
 }

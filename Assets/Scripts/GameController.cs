@@ -10,9 +10,21 @@ using UnityEngine;
 
 public class GameController : MonoBehaviour
 {
+    private event Action<Player> OnActivePlayerChange;
+
     public GridManager grid;
     public Player[] players;
-    private int _activePlayer = 0;
+    private int _activePlayer;
+
+    private int ActivePlayer
+    {
+        get => _activePlayer;
+        set
+        {
+            _activePlayer = value % players.Length;
+            OnActivePlayerChange(players[_activePlayer]);
+        }
+    }
 
     // Start is called before the first frame update
     void Start()
@@ -20,16 +32,16 @@ public class GameController : MonoBehaviour
         foreach (var player in players)
         {
             player.Init(grid);
+            OnActivePlayerChange += player.HandleActivePlayerChange;
         }
-        players[_activePlayer].OnTurnStart();
+
+        ActivePlayer = 0;
     }
 
     public void NextPlayer()
     {
-        players[_activePlayer].OnTurnEnd();
-        _activePlayer++;
-        _activePlayer = _activePlayer % players.Length;
-        players[_activePlayer].OnTurnStart();
+        ActivePlayer++;
+        OnActivePlayerChange(players[ActivePlayer]);
 
         Debug.Log($"Active Player: {players[_activePlayer].gameObject.name}");
     }
