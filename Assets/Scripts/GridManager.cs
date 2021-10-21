@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using Grid.Pathing;
 using UnityEngine;
 
@@ -16,6 +17,9 @@ namespace Grid {
         private IAreaFinder _areaFinder;
 
         public GridPoint prefab;
+
+        private uint _nextHighlightKey = 0;
+        private Dictionary<uint, IList<Vector2Int>> _highlights = new Dictionary<uint, IList<Vector2Int>>();
 
         /**
          * <param name="First">The Grid position</param>
@@ -55,6 +59,33 @@ namespace Grid {
         public GridPoint Get(Vector2Int point)
         {
             return _grid.Get(point);
+        }
+
+        public uint AddHighlightZone(IList<Vector2Int> points)
+        {
+            while (_highlights.ContainsKey(_nextHighlightKey))
+            {
+                _nextHighlightKey++;
+            }
+
+            _highlights[_nextHighlightKey] = points;
+            foreach (var point in points)
+            {
+                var gridPoint = Get(point);
+                gridPoint.AddHighlightId(_nextHighlightKey);
+            }
+            return _nextHighlightKey++;
+        }
+
+        public void ReleaseHighlightZone(uint id)
+        {
+            var points = _highlights[id];
+            foreach (var point in points)
+            {
+                var gridPoint = Get(point);
+                gridPoint.RemoveHighlightId(id);
+            }
+            _highlights.Remove(id);
         }
 
         #endregion

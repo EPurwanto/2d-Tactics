@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using Grid.Agent;
 using UnityEngine;
 
@@ -12,20 +13,30 @@ namespace Grid
         public SpriteRenderer sprite;
 
         private Color _baseColor;
+        public Color highlightColor;
+        private HashSet<uint> _highlightIds = new HashSet<uint>();
 
         private void Start()
         {
             _baseColor = sprite.color;
         }
 
-        public void SetTint(Color color)
+        public void AddHighlightId(uint id)
         {
-            sprite.color = color;
+            if (_highlightIds.Count == 0)
+            {
+                sprite.color = highlightColor;
+            }
+            _highlightIds.Add(id);
         }
 
-        public void ClearTint()
+        public void RemoveHighlightId(uint id)
         {
-            sprite.color = _baseColor;
+            _highlightIds.Remove(id);
+            if (_highlightIds.Count == 0)
+            {
+                sprite.color = _baseColor;
+            }
         }
 
         public void HandleClick()

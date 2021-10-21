@@ -23,7 +23,8 @@ namespace Grid.Agent
         public int maxMovement = 4;
         public int remainingMovement = 0;
         private IList<Vector2Int> _path;
-        private IList<Vector2Int> _reachableArea;
+        private bool _hasHighlight;
+        private uint? _reachableAreaHighlightId;
 
         public LineRenderer lineRenderer;
         public Color rangeColour = Color.green;
@@ -39,9 +40,7 @@ namespace Grid.Agent
             set
             {
                 _selected = value;
-                var previousReachableArea = _reachableArea;
-                _reachableArea = value ? _grid.Circle(position, remainingMovement) : null;
-                UpdateHighlights(previousReachableArea);
+                UpdateHighlights();
                 UpdateState();
             }
         }
@@ -120,11 +119,11 @@ namespace Grid.Agent
         {
             _path = path;
             _stepTimer = 0;
-            UpdateHighlights(null);
+            UpdatePathIndicator();
             UpdateState();
         }
 
-        public bool MoveNext()
+        public void MoveNext()
         {
             if (remainingMovement > 0 && _path != null)
             {
@@ -132,62 +131,49 @@ namespace Grid.Agent
                 _path.RemoveAt(0);
                 MoveTo(destination);
 
-                var prevReachableArea = _reachableArea;
-                _reachableArea = _grid.Circle(position, remainingMovement);
-
-                var prevPath = new List<Vector2Int>();
-                prevPath.Add(destination);
-
                 if (_path.Count == 0)
                 {
                     SetPath(null);
                 }
-                UpdateHighlights(prevReachableArea);
-
-                return true;
             }
-
-            return false;
         }
 
-        public bool MoveTo(Vector2Int point)
+        public void MoveTo(Vector2Int point)
         {
             var destination = _grid.Get(point);
             if (!destination || (destination.agent && destination.agent != this))
             {
                 Debug.LogError($"Move Aborted {point}, {destination.agent}");
-                return false;
+                return;
             }
             _grid.Get(position).agent = null;
             destination.agent = this;
             position = point;
             transform.position = _grid.GridToWorld(point);
             remainingMovement -= 1;
-            Debug.Log($"Remaining Movement {remainingMovement} {point}");
 
-            return true;
+            UpdateHighlights();
+            UpdatePathIndicator();
+            Debug.Log($"Remaining Movement {remainingMovement} {point}");
         }
 
-        private void UpdateHighlights(IList<Vector2Int> previousReachableArea)
+        private void UpdateHighlights()
         {
-            if (previousReachableArea != null)
+            if (_reachableAreaHighlightId.HasValue)
             {
-                // Clear tint on existing range
-                foreach (var point in previousReachableArea)
-                {
-                    _grid.Get(point).ClearTint();
-                }
+                _grid.ReleaseHighlightZone(_reachableAreaHighlightId.Value);
+                _reachableAreaHighlightId = null;
             }
 
-            if (_reachableArea != null)
+            if (_selected)
             {
-                // Tint range first so path overrides it
-                foreach (var point in _reachableArea)
-                {
-                    _grid.Get(point).SetTint(rangeColour);
-                }
+                var reachable = _grid.Circle(position, remainingMovement);
+                _reachableAreaHighlightId = _grid.AddHighlightZone(reachable);
             }
+        }
 
+        private void UpdatePathIndicator()
+        {
             if (_path != null)
             {
                 // Update lineRenderer

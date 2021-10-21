@@ -125,3 +125,4 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   agent: {fileID: 0}
   sprite: {fileID: 7252482303876614519}
+  highlightColor: {r: 0.26779994, g: 0.9622642, b: 0.28687862, a: 1}
