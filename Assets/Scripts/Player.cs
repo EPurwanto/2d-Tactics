@@ -46,7 +46,7 @@ namespace Game
             characters = GetComponentsInChildren<GridAgent>();
             foreach (var agent in characters)
             {
-                agent.Init(grid);
+                agent.Init(grid, this);
                 OnTurnStart += agent.HandleTurnStart;
                 OnTurnEnd += agent.HandleTurnEnd;
                 OnSelectedCharacterChange += agent.HandlePlayerSelectionChange;
@@ -82,7 +82,7 @@ namespace Game
 
         public void HandleGridClick(Vector2Int gridPoint, Vector2 worldPoint)
         {
-            if (_active && (!SelectedCharacter || SelectedCharacter.State == AgentState.Selected))
+            if (_active && (!SelectedCharacter || SelectedCharacter.State == AgentState.Ready))
             {
                 var agent = _grid.Get(gridPoint)?.agent;
                 if (agent)
@@ -94,7 +94,7 @@ namespace Game
                 }
                 else if (SelectedCharacter)
                 {
-                    var (cost, path) = _grid.Path(SelectedCharacter.position, gridPoint);
+                    var (cost, path) = _grid.Path(SelectedCharacter.position, gridPoint, SelectedCharacter.MovementCost);
                     if (cost <= SelectedCharacter.remainingMovement)
                     {
                         SelectedCharacter.SetPath(path);

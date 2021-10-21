@@ -6,7 +6,9 @@ namespace Grid.Pathing
 {
     public interface IPathFinder
     {
-        public Tuple<float, List<Vector2Int>> Path(Vector2Int origin, Vector2Int destination);
+        public (float, List<Vector2Int>) Path(Vector2Int origin, Vector2Int destination);
+
+        public (float, List<Vector2Int>) Path(Vector2Int origin, Vector2Int destination, Func<Vector2Int, Vector2Int, float> costFn);
     }
 
     public static class Constants

@@ -99,10 +99,14 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   position: {x: 0, y: 0}
-  stepTimeS: 0.5
   maxMovement: 4
+  remainingMovement: 0
+  maxHealth: 10
+  currentHealth: 10
+  attackDamage: 1
+  attackRange: 1
+  stepTimeS: 0.5
   lineRenderer: {fileID: 4999580428551496661}
-  rangeColour: {r: 0, g: 1, b: 0, a: 1}
 --- !u!114 &6551312536116205570
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -121,6 +125,7 @@ MonoBehaviour:
   readyColor: {r: 0, g: 0, b: 0, a: 1}
   selectedColor: {r: 0, g: 1, b: 0, a: 1}
   movingColor: {r: 0, g: 0, b: 1, a: 1}
+  deadColor: {r: 0, g: 0, b: 0, a: 0.6156863}
 --- !u!120 &4999580428551496661
 LineRenderer:
   m_ObjectHideFlags: 0

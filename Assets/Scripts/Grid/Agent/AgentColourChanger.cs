@@ -11,6 +11,7 @@ namespace Grid.Agent
         public Color readyColor = Color.black;
         public Color selectedColor = Color.green;
         public Color movingColor = Color.blue;
+        public Color deadColor = Color.blue;
 
         private void Start()
         {
@@ -25,10 +26,10 @@ namespace Grid.Agent
                 case AgentState.Uninitialised:
                     sprite.color = uninitialisedColor;
                     break;
-                case AgentState.Ready:
+                case AgentState.Idle:
                     sprite.color = readyColor;
                     break;
-                case AgentState.Selected:
+                case AgentState.Ready:
                     sprite.color = selectedColor;
                     break;
                 case AgentState.Moving:

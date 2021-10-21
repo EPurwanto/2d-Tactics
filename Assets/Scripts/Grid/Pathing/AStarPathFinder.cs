@@ -17,18 +17,22 @@ namespace Grid.Pathing
             public PathNode Prev;
         }
 
-        private Func<Vector2Int, Vector2Int, float> _costFunc;
-        private Func<Vector2Int, Vector2Int, float> _hCostFunc;
-        private Func<Vector2Int, IEnumerable<Vector2Int>> _neighboursFunc;
+        private Func<Vector2Int, Vector2Int, float> _defaultCostFn;
+        private Func<Vector2Int, Vector2Int, float> _hCostFn;
+        private Func<Vector2Int, IEnumerable<Vector2Int>> _neighboursFn;
 
-        public AStarPathFinder(Func<Vector2Int, Vector2Int, float> cost, Func<Vector2Int, Vector2Int, float> hCost, Func<Vector2Int, IEnumerable<Vector2Int>> neighbours)
+        public AStarPathFinder(Func<Vector2Int, Vector2Int, float> defaultCostFn, Func<Vector2Int, Vector2Int, float> hCost, Func<Vector2Int, IEnumerable<Vector2Int>> neighbours)
         {
-            _costFunc = cost;
-            _hCostFunc = hCost;
-            _neighboursFunc = neighbours;
+            _defaultCostFn = defaultCostFn;
+            _hCostFn = hCost;
+            _neighboursFn = neighbours;
         }
 
-        public Tuple<float, List<Vector2Int>> Path(Vector2Int origin, Vector2Int destination)
+        public (float, List<Vector2Int>) Path(Vector2Int origin, Vector2Int destination)
+        {
+            return Path(origin, destination, _defaultCostFn);
+        }
+        public (float, List<Vector2Int>) Path(Vector2Int origin, Vector2Int destination, Func<Vector2Int, Vector2Int, float> costFn)
         {
             Debug.Log("Pathfinding Start");
             var counter = 0;
@@ -46,10 +50,10 @@ namespace Grid.Pathing
                 {
                     Debug.Log("Pathfinding Success");
                     var path = ExtractPath(node);
-                    return new Tuple<float, List<Vector2Int>>(node.GCost, path.GetRange(1, path.Count - 1));
+                    return (node.GCost, path.GetRange(1, path.Count - 1));
                 }
 
-                foreach (var neighbour in ExpandNode(node, destination))
+                foreach (var neighbour in ExpandNode(node, destination, costFn))
                 {
                     openSet.Enqueue(neighbour, neighbour.GCost + neighbour.HCost);
                 }
@@ -61,7 +65,7 @@ namespace Grid.Pathing
             }
 
             Debug.Log("Pathfinding Failure");
-            return new Tuple<float, List<Vector2Int>>(Constants.CostInfinite, new List<Vector2Int>(0));
+            return (Constants.CostInfinite, new List<Vector2Int>(0));
         }
 
         private List<Vector2Int> ExtractPath(PathNode node)
@@ -76,14 +80,14 @@ namespace Grid.Pathing
             return path;
         }
 
-        private IEnumerable<PathNode> ExpandNode(PathNode node, Vector2Int destination)
+        private IEnumerable<PathNode> ExpandNode(PathNode node, Vector2Int destination, Func<Vector2Int, Vector2Int, float> costFn)
         {
-            return _neighboursFunc(node.Point).Select(neighbour => new PathNode()
+            return _neighboursFn(node.Point).Select(neighbour => new PathNode()
             {
                 Point = neighbour,
                 Prev = node,
-                GCost = node.GCost + _costFunc(node.Point, neighbour),
-                HCost = _hCostFunc(neighbour, destination)
+                GCost = node.GCost + costFn(node.Point, neighbour),
+                HCost = _hCostFn(neighbour, destination)
             });
         }
     }

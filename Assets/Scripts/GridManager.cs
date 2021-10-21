@@ -30,8 +30,8 @@ namespace Grid {
         public void Init()
         {
             _grid = new GenericSquareGrid<GridPoint>(size.x, size.y);
-            _pathFinder = new AStarPathFinder<GridPoint>(Cost, HeuristicCost, Neighbours);
-            _areaFinder = new SimpleAreaFinder(Cost, Neighbours);
+            _pathFinder = new AStarPathFinder<GridPoint>(ManhattanCost, HeuristicCost, Neighbours);
+            _areaFinder = new SimpleAreaFinder(ManhattanCost, Neighbours);
             for (var x = 0; x < size.x; x++)
             {
                 for (var y = 0; y < size.y; y++)
@@ -92,9 +92,14 @@ namespace Grid {
 
         #region IPathFinder
 
-        public Tuple<float, List<Vector2Int>> Path(Vector2Int origin, Vector2Int destination)
+        public (float, List<Vector2Int>) Path(Vector2Int origin, Vector2Int destination)
         {
             return _pathFinder.Path(origin, destination);
+        }
+
+        public (float, List<Vector2Int>) Path(Vector2Int origin, Vector2Int destination, Func<Vector2Int, Vector2Int, float> costFn)
+        {
+            return _pathFinder.Path(origin, destination, costFn);
         }
 
         #endregion
@@ -106,12 +111,16 @@ namespace Grid {
             return _areaFinder.Circle(center, radius);
         }
 
+        public IList<Vector2Int> Circle(Vector2Int center, float radius, Func<Vector2Int, Vector2Int, float> costFn)
+        {
+            return _areaFinder.Circle(center, radius, costFn);
+        }
+
         #endregion
 
         #region Pathfinding Functions
 
-
-        public float Cost(Vector2Int origin, Vector2Int destination)
+        public float ManhattanCost(Vector2Int origin, Vector2Int destination)
         {
             if (destination == origin)
             {
@@ -121,8 +130,8 @@ namespace Grid {
             if (Math.Abs(diff.x) + Math.Abs(diff.y) == 1)
             {
                 var point = Get(destination);
-                // Infinite cost for moving into occupied space or off edge of map
-                if (point && !point.agent)
+                // Infinite cost for moving off edge of map
+                if (point)
                 {
                     return 1;
                 }

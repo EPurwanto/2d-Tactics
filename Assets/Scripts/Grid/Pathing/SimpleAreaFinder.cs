@@ -14,16 +14,21 @@ namespace Grid.Pathing
             public float Cost;
         }
 
-        private Func<Vector2Int, Vector2Int, float> _costFunc;
+        private Func<Vector2Int, Vector2Int, float> _defaultCostFunc;
         private Func<Vector2Int, IEnumerable<Vector2Int>> _neighboursFunc;
 
-        public SimpleAreaFinder(Func<Vector2Int, Vector2Int, float> cost, Func<Vector2Int, IEnumerable<Vector2Int>> neighbours)
+        public SimpleAreaFinder(Func<Vector2Int, Vector2Int, float> defaultCost, Func<Vector2Int, IEnumerable<Vector2Int>> neighbours)
         {
-            _costFunc = cost;
+            _defaultCostFunc = defaultCost;
             _neighboursFunc = neighbours;
         }
 
         public IList<Vector2Int> Circle(Vector2Int center, float radius)
+        {
+            return Circle(center, radius, _defaultCostFunc);
+        }
+
+        public IList<Vector2Int> Circle(Vector2Int center, float radius, Func<Vector2Int, Vector2Int, float> costFn)
         {
             var openSet = new SimplePriorityQueue<PathNode>();
             openSet.Enqueue(new PathNode(){
@@ -37,7 +42,7 @@ namespace Grid.Pathing
                 var node = openSet.Dequeue();
                 closedSet.Add(node.Point);
 
-                foreach (var neighbour in ExpandNode(node))
+                foreach (var neighbour in ExpandNode(node, costFn))
                 {
                     if (neighbour.Cost <= radius)
                     {
@@ -49,12 +54,12 @@ namespace Grid.Pathing
             return closedSet.GetRange(1, closedSet.Count - 1);
         }
 
-        private IEnumerable<PathNode> ExpandNode(PathNode node)
+        private IEnumerable<PathNode> ExpandNode(PathNode node, Func<Vector2Int, Vector2Int, float> costFn)
         {
             return _neighboursFunc(node.Point).Select(neighbour => new PathNode()
             {
                 Point = neighbour,
-                Cost = node.Cost + _costFunc(node.Point, neighbour),
+                Cost = node.Cost + costFn(node.Point, neighbour),
             });
         }
     }
